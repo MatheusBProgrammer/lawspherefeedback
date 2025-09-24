@@ -37,7 +37,17 @@ import {
   Users,
   ShieldCheck,
   LogOut,
+  X,
+  Eye,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface FeedbackResponse {
   id: string;
@@ -77,6 +87,10 @@ export default function AdminPage() {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<FeedbackResponse | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
@@ -121,6 +135,16 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error logging out:", error);
     }
+  };
+
+  const openUserModal = (user: FeedbackResponse) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const closeUserModal = () => {
+    setSelectedUser(null);
+    setIsModalOpen(false);
   };
 
   const fetchFeedbackData = async () => {
@@ -281,7 +305,8 @@ export default function AdminPage() {
   const getRatingColor = (rating: string | number | null | undefined) => {
     const num = extractRating(rating);
     if (num >= 8) return "bg-green-100 text-green-800 border border-green-200";
-    if (num >= 6) return "bg-yellow-100 text-yellow-800 border border-yellow-200";
+    if (num >= 6)
+      return "bg-yellow-100 text-yellow-800 border border-yellow-200";
     return "bg-red-100 text-red-800 border border-red-200";
   };
 
@@ -337,126 +362,424 @@ export default function AdminPage() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <header className="flex flex-col items-center text-center mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Scale className="w-9 h-9 text-blue-600" />
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Admin Dashboard
-            </h1>
+  // Modern User Details Modal Component
+  const UserDetailsModal = () => {
+    if (!selectedUser) return null;
+
+    return (
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-white/30 shadow-2xl">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Feedback Details - {selectedUser.name}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-slate-600 text-base">
+              Complete user information and feedback analysis
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  Name
+                </label>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                  <p className="text-slate-900 font-medium">
+                    {selectedUser.name || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                  Email
+                </label>
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
+                  <p className="text-slate-900 font-medium break-all">
+                    {selectedUser.email || "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modern Ratings */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-white" />
+                </div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                  Ratings
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Overall Usefulness
+                  </label>
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                    <Badge
+                      className={`rounded-xl px-3 py-1.5 text-sm font-semibold shadow-sm ${getRatingColor(
+                        selectedUser.overall_usefulness
+                      )}`}
+                    >
+                      {selectedUser.overall_usefulness ?? "-"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Communication Impact
+                  </label>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                    <Badge
+                      className={`rounded-xl px-3 py-1.5 text-sm font-semibold shadow-sm ${getRatingColor(
+                        selectedUser.client_communication_impact
+                      )}`}
+                    >
+                      {selectedUser.client_communication_impact ?? "-"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Reliability
+                  </label>
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-4 rounded-xl border border-purple-100">
+                    <Badge
+                      className={`rounded-xl px-3 py-1.5 text-sm font-semibold shadow-sm ${getRatingColor(
+                        selectedUser.reliability
+                      )}`}
+                    >
+                      {selectedUser.reliability ?? "-"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Firm Profile and Value Perception */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Firm Type
+                </label>
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <Badge
+                    className={`${getFirmProfileColor(
+                      selectedUser.firm_profile
+                    )}`}
+                  >
+                    {selectedUser.firm_profile
+                      ? selectedUser.firm_profile.replaceAll("_", " ")
+                      : "-"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Value Perception
+                </label>
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <Badge
+                    className={`${getRatingColor(
+                      selectedUser.value_perception
+                    )}`}
+                  >
+                    {selectedUser.value_perception ?? "-"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Tools of Interest */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Tools of Interest
+              </label>
+              <div className="bg-gray-50 p-3 rounded-md">
+                {selectedUser.next_tools &&
+                selectedUser.next_tools.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUser.next_tools.map((tool, i) => (
+                      <Badge
+                        key={i}
+                        className="bg-purple-100 text-purple-800 border border-purple-200"
+                      >
+                        {tool.replaceAll("_", " ")}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-gray-500">-</span>
+                )}
+              </div>
+            </div>
+
+            {/* Early Access */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Early Access
+              </label>
+              <div className="bg-gray-50 p-3 rounded-md">
+                <Badge
+                  className={`${getRatingColor(
+                    selectedUser.early_access_invitation
+                  )}`}
+                >
+                  {selectedUser.early_access_invitation ?? "-"}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Submission Date */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Submission Date
+              </label>
+              <div className="bg-gray-50 p-3 rounded-md">
+                <span className="text-gray-900">
+                  {selectedUser.created_at
+                    ? new Date(selectedUser.created_at).toLocaleString("en-US")
+                    : "-"}
+                </span>
+              </div>
+            </div>
+
+            {/* UTM Parameters */}
+            {(selectedUser.utm_source ||
+              selectedUser.utm_medium ||
+              selectedUser.utm_campaign) && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  UTM Parameters
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedUser.utm_source && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        UTM Source
+                      </label>
+                      <p className="text-gray-900 bg-gray-50 p-3 rounded-md">
+                        {selectedUser.utm_source}
+                      </p>
+                    </div>
+                  )}
+                  {selectedUser.utm_medium && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        UTM Medium
+                      </label>
+                      <p className="text-gray-900 bg-gray-50 p-3 rounded-md">
+                        {selectedUser.utm_medium}
+                      </p>
+                    </div>
+                  )}
+                  {selectedUser.utm_campaign && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        UTM Campaign
+                      </label>
+                      <p className="text-gray-900 bg-gray-50 p-3 rounded-md">
+                        {selectedUser.utm_campaign}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <p className="text-gray-600 mb-4">
-            Manage and visualize user feedback data
-          </p>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="text-gray-600 border-gray-300 hover:bg-gray-50"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 right-1/3 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "4s" }}
+        ></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+        {/* Modern Header */}
+        <header className="text-center mb-12">
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-2xl opacity-20 scale-150"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/30 max-w-4xl mx-auto">
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Scale className="w-7 h-7 text-white" />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+              </div>
+              <p className="text-lg text-slate-600 mb-6 max-w-2xl mx-auto">
+                Manage and visualize user feedback data with modern analytics
+              </p>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="bg-white/60 backdrop-blur-sm border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
         </header>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+        {/* Modern Stats */}
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-12">
+          <Card className="bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50"></div>
+            <CardHeader className="pb-3 relative z-10">
+              <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 Total Responses
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end justify-between">
-              <div className="text-3xl font-bold text-blue-600">
+            <CardContent className="flex items-end justify-between relative z-10">
+              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {stats.total}
               </div>
-              <Users className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Users className="w-6 h-6 text-white" />
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+          <Card className="bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50"></div>
+            <CardHeader className="pb-3 relative z-10">
+              <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 Average Usefulness
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end justify-between">
-              <div className="text-3xl font-bold text-green-600">
+            <CardContent className="flex items-end justify-between relative z-10">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {stats.avgUsefulness}/10
               </div>
-              <BarChart3 className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+          <Card className="bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-orange-50/50"></div>
+            <CardHeader className="pb-3 relative z-10">
+              <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                 Average Reliability
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end justify-between">
-              <div className="text-3xl font-bold text-yellow-600">
+            <CardContent className="flex items-end justify-between relative z-10">
+              <div className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                 {stats.avgReliability}/10
               </div>
-              <BarChart3 className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+          <Card className="bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-violet-50/50"></div>
+            <CardHeader className="pb-3 relative z-10">
+              <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                 Early Access
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end justify-between">
-              <div className="text-3xl font-bold text-purple-600">
+            <CardContent className="flex items-end justify-between relative z-10">
+              <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
                 {stats.earlyAccessCount}
               </div>
-              <ShieldCheck className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filtros e Ações */}
-        <Card className="mb-8 bg-white border border-gray-200 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-gray-900">Filters & Actions</CardTitle>
-            <CardDescription className="text-gray-600">
-              Narrow down your results and manage exports
+        {/* Modern Filters & Actions */}
+        <Card className="mb-12 bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl">
+          <CardHeader className="pb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Search className="w-4 h-4 text-white" />
+              </div>
+              <CardTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Filters & Actions
+              </CardTitle>
+            </div>
+            <CardDescription className="text-slate-600 text-base">
+              Narrow down your results and manage exports with modern tools
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
               <div className="relative w-full md:flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search by name, email, or firm profile..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
-                />
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Input
+                    placeholder="Search by name, email, or firm profile..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 h-12 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-900 placeholder:text-slate-500 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                  />
+                </div>
               </div>
 
               <Select value={firmFilter} onValueChange={setFirmFilter}>
-                <SelectTrigger className="min-w-[200px] bg-white border-gray-300 text-gray-900">
-                  <SelectValue placeholder="Filter by firm" />
+                <SelectTrigger className="min-w-[220px] h-12 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-900 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200">
+                  <SelectValue placeholder="Filter by firm type" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 text-gray-900">
-                  <SelectItem value="all">All firms</SelectItem>
-                  <SelectItem value="solo">Solo</SelectItem>
-                  <SelectItem value="2_10_lawyers">2–10 lawyers</SelectItem>
-                  <SelectItem value="11_50_lawyers">11–50 lawyers</SelectItem>
-                  <SelectItem value="50_plus_lawyers">50+ lawyers</SelectItem>
+                <SelectContent className="bg-white/95 backdrop-blur-xl border border-slate-200 text-slate-900 rounded-xl shadow-xl">
+                  <SelectItem value="all" className="rounded-lg">
+                    All firms
+                  </SelectItem>
+                  <SelectItem value="solo" className="rounded-lg">
+                    Solo Practice
+                  </SelectItem>
+                  <SelectItem value="2_10_lawyers" className="rounded-lg">
+                    Small Firm (2–10 lawyers)
+                  </SelectItem>
+                  <SelectItem value="11_50_lawyers" className="rounded-lg">
+                    Medium Firm (11–50 lawyers)
+                  </SelectItem>
+                  <SelectItem value="50_plus_lawyers" className="rounded-lg">
+                    Large Firm (50+ lawyers)
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
               <Button
                 onClick={fetchFeedbackData}
                 variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="h-12 bg-white/80 backdrop-blur-sm border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
@@ -464,7 +787,7 @@ export default function AdminPage() {
 
               <Button
                 onClick={exportToCSV}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
@@ -473,53 +796,91 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* Tabela */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Modern Data Table */}
+        <Card className="bg-white/80 backdrop-blur-xl border border-white/30 shadow-xl">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-gray-900">Feedback Data</CardTitle>
-                <CardDescription className="text-gray-600">
-                  {filteredData.length} records
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-white" />
+                  </div>
+                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                    Feedback Data
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-slate-600 text-base">
+                  <span className="font-semibold text-emerald-600">
+                    {filteredData.length}
+                  </span>{" "}
+                  records found
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-12 text-gray-600">
-                Loading data...
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3 text-slate-600">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  <span className="text-lg font-medium">Loading data...</span>
+                </div>
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                {/* Modern Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-gray-200">
-                        <TableHead className="text-gray-700">Name</TableHead>
-                        <TableHead className="text-gray-700">Email</TableHead>
-                        <TableHead className="text-gray-700">Firm</TableHead>
-                        <TableHead className="text-gray-700">Usefulness</TableHead>
-                        <TableHead className="text-gray-700">Communication</TableHead>
-                        <TableHead className="text-gray-700">Reliability</TableHead>
-                        <TableHead className="text-gray-700">Value</TableHead>
-                        <TableHead className="text-gray-700">Tools</TableHead>
-                        <TableHead className="text-gray-700">Early Access</TableHead>
-                        <TableHead className="text-gray-700">Date</TableHead>
+                      <TableRow className="border-slate-200 bg-slate-50/50">
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Name
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Email
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Firm
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Usefulness
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Communication
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Reliability
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Value
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Tools
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Early Access
+                        </TableHead>
+                        <TableHead className="text-slate-700 font-semibold py-4">
+                          Date
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedData.map((item) => (
-                        <TableRow key={item.id} className="border-gray-200">
-                          <TableCell className="text-gray-900">
+                      {paginatedData.map((item, index) => (
+                        <TableRow
+                          key={item.id}
+                          className="border-slate-200 hover:bg-slate-50/50 transition-all duration-200 cursor-pointer group"
+                          onClick={() => openUserModal(item)}
+                        >
+                          <TableCell className="text-slate-900 font-medium py-4 group-hover:text-slate-700">
                             {item.name || "-"}
                           </TableCell>
-                          <TableCell className="text-gray-900">
+                          <TableCell className="text-slate-900 py-4 group-hover:text-slate-700">
                             {item.email || "-"}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${getFirmProfileColor(
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getFirmProfileColor(
                                 item.firm_profile
                               )}`}
                             >
@@ -528,75 +889,77 @@ export default function AdminPage() {
                                 : "-"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${getRatingColor(
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getRatingColor(
                                 item.overall_usefulness
                               )}`}
                             >
                               {item.overall_usefulness ?? "-"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${getRatingColor(
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getRatingColor(
                                 item.client_communication_impact
                               )}`}
                             >
                               {item.client_communication_impact ?? "-"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${getRatingColor(
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getRatingColor(
                                 item.reliability
                               )}`}
                             >
                               {item.reliability ?? "-"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${getRatingColor(
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getRatingColor(
                                 item.value_perception
                               )}`}
                             >
                               {item.value_perception ?? "-"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-gray-700">
+                          <TableCell className="text-slate-700 py-4">
                             {item.next_tools && item.next_tools.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {item.next_tools.slice(0, 2).map((tool, i) => (
                                   <Badge
                                     key={i}
-                                    className="rounded-md px-2 py-1 bg-purple-100 text-purple-800 border border-purple-200 text-xs"
+                                    className="rounded-xl px-2 py-1 bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 border border-purple-200 text-xs font-semibold shadow-sm"
                                   >
                                     {tool.replaceAll("_", " ")}
                                   </Badge>
                                 ))}
                                 {item.next_tools.length > 2 && (
-                                  <Badge className="rounded-md px-2 py-1 bg-gray-100 text-gray-800 border border-gray-200 text-xs">
+                                  <Badge className="rounded-xl px-2 py-1 bg-gradient-to-r from-slate-100 to-gray-100 text-slate-800 border border-slate-200 text-xs font-semibold shadow-sm">
                                     +{item.next_tools.length - 2}
                                   </Badge>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-500">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4">
                             <Badge
-                              className={`rounded-md px-2 py-1 ${
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${
                                 item.early_access_invitation === "yes"
-                                  ? "bg-green-100 text-green-800 border border-green-200"
-                                  : "bg-red-100 text-red-800 border border-red-200"
+                                  ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200"
+                                  : "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200"
                               }`}
                             >
-                              {item.early_access_invitation === "yes" ? "Yes" : "No"}
+                              {item.early_access_invitation === "yes"
+                                ? "Yes"
+                                : "No"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-gray-700">
+                          <TableCell className="text-slate-700 py-4 group-hover:text-slate-600">
                             {formatDate(item.created_at)}
                           </TableCell>
                         </TableRow>
@@ -605,29 +968,82 @@ export default function AdminPage() {
                   </Table>
                 </div>
 
-                {/* Paginação */}
+                {/* Modern Mobile List View */}
+                <div className="md:hidden space-y-4">
+                  {paginatedData.map((item, index) => (
+                    <div
+                      key={item.id}
+                      onClick={() => openUserModal(item)}
+                      className="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-6 cursor-pointer hover:bg-white/90 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] overflow-hidden shadow-md"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-slate-900 text-lg truncate">
+                            {item.name || "Name not provided"}
+                          </h3>
+                          <p className="text-sm text-slate-600 mt-1 truncate">
+                            {item.email || "Email not provided"}
+                          </p>
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <Badge
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${getFirmProfileColor(
+                                item.firm_profile
+                              )}`}
+                            >
+                              {item.firm_profile
+                                ? item.firm_profile.replaceAll("_", " ")
+                                : "Type not provided"}
+                            </Badge>
+                            <Badge
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm ${
+                                item.early_access_invitation === "yes"
+                                  ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200"
+                                  : "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200"
+                              }`}
+                            >
+                              {item.early_access_invitation === "yes"
+                                ? "Early Access"
+                                : "No"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center text-slate-400 ml-2 flex-shrink-0">
+                          <Eye className="w-6 h-6" />
+                        </div>
+                      </div>
+                      <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
+                        <span>📅</span>
+                        <span>Submitted: {formatDate(item.created_at)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Modern Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-3 mt-6">
+                  <div className="flex justify-center items-center gap-4 mt-8">
                     <Button
                       onClick={() =>
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
                       variant="outline"
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="bg-white/80 backdrop-blur-sm border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </Button>
-                    <span className="text-gray-700">
-                      Page {currentPage} of {totalPages}
-                    </span>
+                    <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
+                      <span className="text-slate-700 font-semibold">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                    </div>
                     <Button
                       onClick={() =>
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
                       variant="outline"
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="bg-white/80 backdrop-blur-sm border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </Button>
@@ -638,6 +1054,9 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* User Details Modal */}
+      <UserDetailsModal />
     </div>
   );
 }
