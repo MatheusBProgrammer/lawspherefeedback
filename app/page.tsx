@@ -23,6 +23,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useUTMTracking } from "@/hooks/use-utm-tracking";
+import { RedirectButton } from "@/components/redirect-button";
 
 interface FormData {
   email: string;
@@ -337,11 +338,29 @@ export default function FeedbackForm() {
               <p className="text-sm sm:text-base text-blue-100 mb-3 sm:mb-4 leading-relaxed">
                 Check your email for your Free Triage App access and next steps.
               </p>
-              <div className="flex items-center justify-center gap-2 text-blue-200">
+              <div className="flex items-center justify-center gap-2 text-blue-200 mb-6">
                 <span className="text-xs sm:text-sm">📧</span>
                 <span className="text-xs sm:text-sm">
                   We'll be in touch within 24 hours
                 </span>
+              </div>
+
+              {/* Redirect Button with Timer */}
+              <div className="mt-6 px-2">
+                <h4 className="text-sm sm:text-base text-blue-100 mb-4 font-medium">
+                  Access your Free Triage App now:
+                </h4>
+                <div className="flex justify-center">
+                  <RedirectButton
+                    url="https://law-sphere-pro-intake.lovable.app/"
+                    className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Launch Free Triage App
+                  </RedirectButton>
+                </div>
+                <p className="text-xs text-blue-200 mt-3 text-center">
+                  You'll be redirected automatically in 30 seconds
+                </p>
               </div>
             </div>
           </CardContent>
