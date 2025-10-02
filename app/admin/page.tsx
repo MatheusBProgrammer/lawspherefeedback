@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   Card,
@@ -94,6 +94,8 @@ export default function AdminPage() {
 
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const secretParam = searchParams.get("secret");
 
   useEffect(() => {
     checkAuth();
@@ -118,11 +120,17 @@ export default function AdminPage() {
       if (response.ok) {
         setIsAuthenticated(true);
       } else {
-        router.push("/admin/login");
+        const loginUrl = secretParam
+          ? `/admin/login?secret=${secretParam}`
+          : "/admin/login";
+        router.push(loginUrl);
       }
     } catch (error) {
       console.error("Error checking authentication:", error);
-      router.push("/admin/login");
+      const loginUrl = secretParam
+        ? `/admin/login?secret=${secretParam}`
+        : "/admin/login";
+      router.push(loginUrl);
     } finally {
       setAuthLoading(false);
     }
@@ -131,7 +139,10 @@ export default function AdminPage() {
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/login", { method: "DELETE" });
-      router.push("/admin/login");
+      const loginUrl = secretParam
+        ? `/admin/login?secret=${secretParam}`
+        : "/admin/login";
+      router.push(loginUrl);
     } catch (error) {
       console.error("Error logging out:", error);
     }

@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +21,8 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const secretParam = searchParams.get("secret");
 
   useEffect(() => {
     // Check if already authenticated
@@ -25,7 +33,10 @@ export default function AdminLoginPage() {
     try {
       const response = await fetch("/api/admin/login");
       if (response.ok) {
-        router.push("/admin");
+        const adminUrl = secretParam
+          ? `/admin?secret=${secretParam}`
+          : "/admin";
+        router.push(adminUrl);
       }
     } catch (error) {
       console.error("Error checking authentication:", error);
@@ -49,7 +60,10 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        router.push("/admin");
+        const adminUrl = secretParam
+          ? `/admin?secret=${secretParam}`
+          : "/admin";
+        router.push(adminUrl);
       } else {
         setError(data.message || "Login failed");
       }
@@ -67,7 +81,9 @@ export default function AdminLoginPage() {
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Scale className="w-8 h-8 text-blue-600" />
-              <CardTitle className="text-2xl font-bold text-gray-900">Admin Login</CardTitle>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Admin Login
+              </CardTitle>
             </div>
             <CardDescription className="text-gray-600">
               Access the admin dashboard
@@ -113,7 +129,11 @@ export default function AdminLoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
