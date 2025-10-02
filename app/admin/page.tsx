@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -71,7 +71,7 @@ interface FeedbackResponse {
   landing_page: string | null;
 }
 
-export default function AdminPage() {
+function AdminPageContent() {
   const [feedbackData, setFeedbackData] = useState<FeedbackResponse[]>([]);
   const [filteredData, setFilteredData] = useState<FeedbackResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1069,5 +1069,13 @@ export default function AdminPage() {
       {/* User Details Modal */}
       <UserDetailsModal />
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminPageContent />
+    </Suspense>
   );
 }
